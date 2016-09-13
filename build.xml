@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ Copyright (c) 2016 The University of Edinburgh
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+ http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+<project name="cp2k-xml-transforms" default="build" basedir=".">
+    <description>
+        Build file for transforming CP2K input descriptions into libhpc schema and transforms.
+    </description>
+    <property name="dir.transform" location="Transform"/>
+    <property name="dir.input" location="Input"/>
+    <property name="dir.output" location="Output"/>
+    <property name="dir.build" location="build"/>
+    <property name="location.saxon" location="C:\\Saxon\\saxon9he.jar"/>
+
+    <target name="init" description="Initialise">
+        <mkdir dir="${dir.build}"/>
+    </target>
+
+    <target name="correct.input.all"
+            depends="init"
+            description="Corrects input so that results are conforming schema/xslt">
+        <antcall target="correct.input">
+            <param name="cp2k.version" value="2.5"/>
+        </antcall>
+        <antcall target="correct.input">
+            <param name="cp2k.version" value="2.6"/>
+        </antcall>
+        <antcall target="correct.input">
+            <param name="cp2k.version" value="2.7"/>
+        </antcall>
+        <antcall target="correct.input">
+            <param name="cp2k.version" value="3.0"/>
+        </antcall>
+        <antcall target="correct.input">
+            <param name="cp2k.version" value="4.0"/>
+        </antcall>
+    </target>
+
+    <target name="correct.input"
+            description="Corrects input so that results are conforming schema/xslt">
+        <xslt in="${dir.input}/${cp2k.version}/cp2k_input.xml"
+              out="${dir.build}/cp2k_input_corrected_${cp2k.version}.xml"
+              style="${dir.transform}/CP2KXMLCorrections-${cp2k.version}.xsl"
+              force="true">
+            <factory name="net.sf.saxon.TransformerFactoryImpl"/>
+            <classpath>
+                <pathelement location="${location.saxon}"/>
+            </classpath>
+        </xslt>
+    </target>
+
+    <target name="generate.schema.all"
+            depends="correct.input.all"
+            description="Builds all schema files">
+        <antcall target="generate.schema">
+            <param name="cp2k.version" value="2.5"/>
+        </antcall>
+        <antcall target="generate.schema">
+            <param name="cp2k.version" value="2.6"/>
+        </antcall>
+        <antcall target="generate.schema">
+            <param name="cp2k.version" value="2.7"/>
+        </antcall>
+        <antcall target="generate.schema">
+            <param name="cp2k.version" value="3.0"/>
+        </antcall>
+      <antcall target="generate.schema">
+          <param name="cp2k.version" value="4.0"/>
+      </antcall>
+    </target>
+
+    <target name="generate.schema"
+            description="Transform input XML into schema file">
+        <xslt in="${dir.build}/cp2k_input_corrected_${cp2k.version}.xml"
+              out="${dir.output}/${cp2k.version}/cp2k-${cp2k.version}.xsd"
+              style="${dir.transform}/CP2KXMLToLibhpcXSD.xsl"
+              force="true">
+            <factory name="net.sf.saxon.TransformerFactoryImpl"/>
+            <classpath>
+                <pathelement location="${location.saxon}"/>
+            </classpath>
+        </xslt>
+    </target>
+
+    <target name="generate.transform.all"
+            depends="correct.input.all"
+            description="Builds all schema files">
+        <antcall target="generate.transform">
+            <param name="cp2k.version" value="2.5"/>
+        </antcall>
+        <antcall target="generate.transform">
+            <param name="cp2k.version" value="2.6"/>
+        </antcall>
+        <antcall target="generate.transform">
+            <param name="cp2k.version" value="2.7"/>
+        </antcall>
+        <antcall target="generate.transform">
+            <param name="cp2k.version" value="3.0"/>
+        </antcall>
+        <antcall target="generate.transform">
+            <param name="cp2k.version" value="4.0"/>
+        </antcall>
+    </target>
+
+    <target name="generate.transform"
+            description="Transform input XML into schema file">
+        <xslt in="${dir.build}/cp2k_input_corrected_${cp2k.version}.xml"
+              out="${dir.output}/${cp2k.version}/CP2KXMLToCP2KText-${cp2k.version}.xsl"
+              style="${dir.transform}/CP2KXMLToLibhpcXSL.xsl"
+              force="true">
+            <factory name="net.sf.saxon.TransformerFactoryImpl"/>
+            <classpath>
+                <pathelement location="${location.saxon}"/>
+            </classpath>
+        </xslt>
+    </target>
+
+    <target name="clean" description="Clean up">
+        <delete dir="${dir.build}"/>
+    </target>
+
+    <target name="build"
+            description="Build all files"
+            depends="generate.schema.all, generate.transform.all, clean"/>
+
+</project>
